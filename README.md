@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 # 🏠 LPRT - Landlord Property Rental Tool
 
 A comprehensive full-stack property management system built with React and Node.js, designed to streamline property management for landlords and provide seamless rental experiences for tenants.
