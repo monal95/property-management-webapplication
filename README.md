@@ -344,10 +344,3 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - **Open Source Community** for inspiration and tools
 
 ---
-
-**Built with ❤️ for property managers and tenants everywhere**
-
-*For questions or support, please open an issue in the repository.*
-=======
-# property-management-webapplication
->>>>>>> 5323dab8826550c95ff04a28856173bcd552728e
