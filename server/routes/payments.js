@@ -24,6 +24,21 @@ try {
   console.log('⚠️  Razorpay package not installed. Payment processing will be disabled.');
 }
 
+// Helper function to check Razorpay availability
+const isRazorpayAvailable = () => {
+  return razorpay !== null && process.env.RAZORPAY_KEY_ID && process.env.RAZORPAY_KEY_SECRET;
+};
+
+// Check payment system status
+router.get('/payment-status', auth, (req, res) => {
+  res.json({
+    success: true,
+    razorpayAvailable: isRazorpayAvailable(),
+    keyConfigured: !!process.env.RAZORPAY_KEY_ID,
+    secretConfigured: !!process.env.RAZORPAY_KEY_SECRET
+  });
+});
+
 // Get all payments for owner (dashboard view)
 router.get('/owner', auth, authorize('owner'), async (req, res) => {
   try {
@@ -77,13 +92,17 @@ router.get('/owner', auth, authorize('owner'), async (req, res) => {
     });
 
     res.json({
+      success: true,
       summary,
       tenantPayments: Object.values(tenantPayments),
       allPayments: payments
     });
   } catch (error) {
     console.error('Error fetching owner payments:', error);
-    res.status(500).json({ message: 'Server error while fetching payments' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching payments' 
+    });
   }
 });
 
@@ -99,7 +118,10 @@ router.get('/tenant', auth, async (req, res) => {
     });
 
     if (!tenant) {
-      return res.status(404).json({ message: 'Tenant record not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Tenant record not found' 
+      });
     }
 
     const payments = await Payment.find({ tenant: tenant._id })
@@ -123,6 +145,7 @@ router.get('/tenant', auth, async (req, res) => {
     const overdueAmount = overdueMonths.reduce((sum, p) => sum + p.amount + (p.lateFees || 0), 0);
 
     res.json({
+      success: true,
       summary,
       payments,
       overdueAmount,
@@ -130,7 +153,10 @@ router.get('/tenant', auth, async (req, res) => {
     });
   } catch (error) {
     console.error('Error fetching tenant payments:', error);
-    res.status(500).json({ message: 'Server error while fetching payments' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching payments' 
+    });
   }
 });
 
@@ -140,16 +166,19 @@ router.post('/create-order', auth, [
   body('paymentIds.*').isMongoId().withMessage('Invalid payment ID')
 ], async (req, res) => {
   try {
-    // Check if Razorpay is available
-    if (!razorpay) {
+    // Check if Razorpay is available FIRST
+    if (!isRazorpayAvailable()) {
       return res.status(503).json({
-        message: 'Payment processing is currently unavailable. Please contact support or try again later.'
+        success: false,
+        message: 'Payment processing is currently unavailable. Please contact your landlord for alternative payment methods.',
+        razorpayAvailable: false
       });
     }
 
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
@@ -164,7 +193,10 @@ router.post('/create-order', auth, [
     });
 
     if (!tenant) {
-      return res.status(404).json({ message: 'Tenant record not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Tenant record not found' 
+      });
     }
 
     // Get the payments to be paid
@@ -175,7 +207,10 @@ router.post('/create-order', auth, [
     }).populate('property', 'title');
 
     if (payments.length === 0) {
-      return res.status(400).json({ message: 'No valid payments found' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'No valid payments found' 
+      });
     }
 
     // Calculate total amount including late fees
@@ -185,41 +220,58 @@ router.post('/create-order', auth, [
       totalAmount += payment.totalAmount;
     });
 
-    // Create Razorpay order
-    const orderOptions = {
-      amount: totalAmount * 100, // Razorpay expects amount in paise
-      currency: 'INR',
-      receipt: `rent_${Date.now()}`,
-      notes: {
-        tenantId: tenant._id.toString(),
-        propertyId: payments[0].property._id.toString(),
-        paymentCount: payments.length.toString()
-      }
-    };
+    try {
+      // Create Razorpay order
+      const orderOptions = {
+        amount: totalAmount * 100, // Razorpay expects amount in paise
+        currency: 'INR',
+        receipt: `rent_${Date.now()}`,
+        notes: {
+          tenantId: tenant._id.toString(),
+          propertyId: payments[0].property._id.toString(),
+          paymentCount: payments.length.toString()
+        }
+      };
 
-    const order = await razorpay.orders.create(orderOptions);
+      const order = await razorpay.orders.create(orderOptions);
 
-    // Update payments with order ID
-    await Payment.updateMany(
-      { _id: { $in: req.body.paymentIds } },
-      { razorpayOrderId: order.id }
-    );
+      // Update payments with order ID
+      await Payment.updateMany(
+        { _id: { $in: req.body.paymentIds } },
+        { razorpayOrderId: order.id }
+      );
 
-    res.json({
-      orderId: order.id,
-      amount: totalAmount,
-      currency: 'INR',
-      payments: payments.map(p => ({
-        id: p._id,
-        month: p.formattedLeaseMonth,
-        amount: p.amount,
-        lateFees: p.lateFees,
-        totalAmount: p.totalAmount
-      }))
-    });
+      res.json({
+        success: true,
+        orderId: order.id,
+        amount: totalAmount,
+        currency: 'INR',
+        razorpayKeyId: process.env.RAZORPAY_KEY_ID, // Send key to frontend
+        payments: payments.map(p => ({
+          id: p._id,
+          month: p.formattedLeaseMonth,
+          amount: p.amount,
+          lateFees: p.lateFees,
+          totalAmount: p.totalAmount
+        }))
+      });
+
+    } catch (razorpayError) {
+      console.error('Razorpay order creation error:', razorpayError);
+      return res.status(500).json({
+        success: false,
+        message: 'Failed to create payment order. Please try again or contact support.',
+        error: process.env.NODE_ENV === 'development' ? razorpayError.message : undefined
+      });
+    }
+
   } catch (error) {
     console.error('Error creating Razorpay order:', error);
-    res.status(500).json({ message: 'Server error while creating payment order' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while creating payment order',
+      error: process.env.NODE_ENV === 'development' ? error.message : undefined
+    });
   }
 });
 
@@ -233,8 +285,16 @@ router.post('/verify-payment', auth, [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: 'Validation failed',
         errors: errors.array()
+      });
+    }
+
+    if (!isRazorpayAvailable()) {
+      return res.status(503).json({
+        success: false,
+        message: 'Payment verification unavailable'
       });
     }
 
@@ -249,14 +309,20 @@ router.post('/verify-payment', auth, [
       .digest('hex');
 
     if (signature !== razorpay_signature) {
-      return res.status(400).json({ message: 'Invalid payment signature' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Invalid payment signature' 
+      });
     }
 
     // Find payments with this order ID
     const payments = await Payment.find({ razorpayOrderId: razorpay_order_id });
 
     if (payments.length === 0) {
-      return res.status(404).json({ message: 'No payments found for this order' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'No payments found for this order' 
+      });
     }
 
     // Mark all payments as paid
@@ -265,13 +331,17 @@ router.post('/verify-payment', auth, [
     }
 
     res.json({
+      success: true,
       message: 'Payment verified successfully',
       paymentId: razorpay_payment_id,
       paymentsCount: payments.length
     });
   } catch (error) {
     console.error('Error verifying payment:', error);
-    res.status(500).json({ message: 'Server error while verifying payment' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while verifying payment' 
+    });
   }
 });
 
@@ -287,6 +357,7 @@ router.post('/generate-lease-payments', auth, authorize('owner'), [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
@@ -297,13 +368,19 @@ router.post('/generate-lease-payments', auth, authorize('owner'), [
     // Verify property ownership
     const property = await Property.findById(propertyId);
     if (!property || property.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Access denied. Property not found or not owned by you.' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Property not found or not owned by you.' 
+      });
     }
 
     // Check if payments already exist for this tenant-property combination
     const existingPayments = await Payment.findOne({ tenant: tenantId, property: propertyId });
     if (existingPayments) {
-      return res.status(400).json({ message: 'Payments already exist for this tenant-property combination' });
+      return res.status(400).json({ 
+        success: false, 
+        message: 'Payments already exist for this tenant-property combination' 
+      });
     }
 
     // Generate monthly payments
@@ -317,13 +394,17 @@ router.post('/generate-lease-payments', auth, authorize('owner'), [
     );
 
     res.json({
+      success: true,
       message: 'Monthly payments generated successfully',
       paymentsCount: payments.length,
       payments: payments
     });
   } catch (error) {
     console.error('Error generating lease payments:', error);
-    res.status(500).json({ message: 'Server error while generating lease payments' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while generating lease payments' 
+    });
   }
 });
 
@@ -336,6 +417,7 @@ router.patch('/:id/mark-paid', auth, authorize('owner'), [
     const errors = validationResult(req);
     if (!errors.isEmpty()) {
       return res.status(400).json({
+        success: false,
         message: 'Validation failed',
         errors: errors.array()
       });
@@ -343,12 +425,18 @@ router.patch('/:id/mark-paid', auth, authorize('owner'), [
 
     const payment = await Payment.findById(req.params.id);
     if (!payment) {
-      return res.status(404).json({ message: 'Payment not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Payment not found' 
+      });
     }
 
     // Verify ownership
     if (payment.owner.toString() !== req.user._id.toString()) {
-      return res.status(403).json({ message: 'Access denied. Not your payment.' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied. Not your payment.' 
+      });
     }
 
     payment.status = 'paid';
@@ -361,12 +449,16 @@ router.patch('/:id/mark-paid', auth, authorize('owner'), [
     await payment.save();
 
     res.json({
+      success: true,
       message: 'Payment marked as paid successfully',
       payment
     });
   } catch (error) {
     console.error('Error marking payment as paid:', error);
-    res.status(500).json({ message: 'Server error while updating payment' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while updating payment' 
+    });
   }
 });
 
@@ -379,7 +471,10 @@ router.get('/:id', auth, async (req, res) => {
       .populate('owner', 'firstName lastName');
 
     if (!payment) {
-      return res.status(404).json({ message: 'Payment not found' });
+      return res.status(404).json({ 
+        success: false, 
+        message: 'Payment not found' 
+      });
     }
 
     // Check access permissions
@@ -394,13 +489,22 @@ router.get('/:id', auth, async (req, res) => {
       (tenant && payment.tenant.toString() === tenant._id.toString());
 
     if (!hasAccess) {
-      return res.status(403).json({ message: 'Access denied to this payment' });
+      return res.status(403).json({ 
+        success: false, 
+        message: 'Access denied to this payment' 
+      });
     }
 
-    res.json(payment);
+    res.json({
+      success: true,
+      payment
+    });
   } catch (error) {
     console.error('Error fetching payment details:', error);
-    res.status(500).json({ message: 'Server error while fetching payment details' });
+    res.status(500).json({ 
+      success: false, 
+      message: 'Server error while fetching payment details' 
+    });
   }
 });
 

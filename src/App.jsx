@@ -18,9 +18,9 @@ import Signup from './components/Auth/Signup.jsx';
 
 // Dashboard Component with Sidebar Navigation
 const Dashboard = ({ role, onLogout }) => {
-  const storedName = localStorage.getItem('userName') || (window.mockStorage && window.mockStorage.userName) || 'User';
+  const storedName = localStorage.getItem('userName') || 'User';
   const firstName = storedName.split(' ')[0];
-  const userEmail = (window.mockStorage && window.mockStorage.userEmail) || localStorage.getItem('userEmail') || 'user@example.com';
+  const userEmail = localStorage.getItem('userEmail') || 'user@example.com';
   const [activeTab, setActiveTab] = useState(role === 'owner' ? 'properties' : 'my-property');
   const [sidebarOpen, setSidebarOpen] = useState(true);
 
@@ -194,46 +194,91 @@ export default function App() {
   const [currentView, setCurrentView] = useState('role-selection');
   const [selectedRole, setSelectedRole] = useState(null);
   const [showSplash, setShowSplash] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
 
+  // Check for existing login on app start
   useEffect(() => {
-    const isLoggedIn = (window.mockStorage && window.mockStorage.loggedIn) || null;
-    const role = (window.mockStorage && window.mockStorage.role) || null;
+    const checkExistingLogin = () => {
+      try {
+        const isLoggedIn = localStorage.getItem('loggedIn');
+        const role = localStorage.getItem('role');
+        const token = localStorage.getItem('token');
+        
+        if (isLoggedIn === 'true' && role && token) {
+          console.log('Found existing login session');
+          setSelectedRole(role);
+          setCurrentView('dashboard');
+        } else {
+          console.log('No existing login session found');
+          setCurrentView('role-selection');
+        }
+      } catch (error) {
+        console.error('Error checking existing login:', error);
+        setCurrentView('role-selection');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-    if (isLoggedIn && role) {
-      setSelectedRole(role);
-      setCurrentView('dashboard');
-    }
-  }, []);
+    // Check after splash screen
+    const timer = setTimeout(() => {
+      setShowSplash(false);
+      checkExistingLogin();
+    }, 1400);
 
-  useEffect(() => {
-    const timer = setTimeout(() => setShowSplash(false), 1400);
     return () => clearTimeout(timer);
   }, []);
 
   const handleRoleSelect = (role) => {
     setSelectedRole(role);
-    // Store role
-    window.mockStorage = window.mockStorage || {};
-    window.mockStorage.role = role;
+    // Store role in localStorage
+    localStorage.setItem('role', role);
     setCurrentView('login');
   };
 
   const handleLogin = () => {
+    console.log('Login successful, navigating to dashboard');
     setCurrentView('dashboard');
   };
 
   const handleSignup = () => {
+    console.log('Signup successful, navigating to dashboard');
     setCurrentView('dashboard');
   };
 
   const handleLogout = () => {
-    // Clear mock storage
-    window.mockStorage = {};
-    setSelectedRole(null);
-    setCurrentView('role-selection');
+    try {
+      // Clear all stored login data
+      localStorage.removeItem('loggedIn');
+      localStorage.removeItem('userEmail');
+      localStorage.removeItem('userName');
+      localStorage.removeItem('token');
+      localStorage.removeItem('role');
+      
+      console.log('Logout successful, cleared all stored data');
+      
+      setSelectedRole(null);
+      setCurrentView('role-selection');
+    } catch (error) {
+      console.error('Error during logout:', error);
+    }
   };
 
   const renderCurrentView = () => {
+    if (isLoading) {
+      return (
+        <div className="min-h-screen flex items-center justify-center bg-gray-50">
+          <div className="text-center">
+            <div className="text-4xl font-extrabold mb-4">
+              <span className="text-black">Renti</span><span className="text-yellow-500">fy</span>
+            </div>
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-yellow-500 mx-auto"></div>
+            <p className="text-gray-600 mt-2">Loading...</p>
+          </div>
+        </div>
+      );
+    }
+
     switch (currentView) {
       case 'role-selection':
         return <RoleSelection onRoleSelect={handleRoleSelect} />;
@@ -262,7 +307,7 @@ export default function App() {
     return (
       <div className="min-h-screen flex items-center justify-center bg-white">
         <div className="text-5xl sm:text-6xl font-extrabold animate-pulse">
-          <span className="text-black">Renti</span><span className="text-yellow-400">fy</span>
+          <span className="text-black">Renti</span><span className="text-yellow-500">fy</span>
         </div>
       </div>
     );

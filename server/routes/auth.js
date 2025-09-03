@@ -21,8 +21,8 @@ router.post('/register', [
     body('firstName').trim().isLength({ min: 1 }).withMessage('First name must be at least 2 characters'),
     body('lastName').trim().isLength({ min: 1 }).withMessage('Last name is required'),
     body('email')
-        .matches(/^[A-Za-z]+\d+@gmail\.com$/)
-        .withMessage('Email must be letters followed by numbers and @gmail.com'),
+        .matches(/^[a-zA-Z0-9._%+-]+@gmail\.com$/)
+        .withMessage('Invalid Email'),
     body('password')
         .matches(/^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/)
         .withMessage('Password needs 1 uppercase, 1 number, 1 special char, 6+ chars'),
@@ -132,7 +132,7 @@ router.post('/login', [
 
         if (isEmail) {
             // Login with email
-            if (!/^[A-Za-z]+\d+@gmail\.com$/.test(identifier)) {
+            if (!/^(?=.{6,30}@gmail\.com$)(?![.])(?!.*[.]{2})[A-Za-z0-9]+(?:\.[A-Za-z0-9]+)*@gmail\.com$/i.test(identifier)) {
                 return res.status(400).json({
                     message: 'Email must be letters followed by numbers and @gmail.com'
                 });

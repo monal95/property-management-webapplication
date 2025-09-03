@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, UserPlus, User, Mail, Lock, Home, Phone } from "lucide-react";
 
-const EMAIL_POLICY = /^[A-Za-z]+\d+@gmail\.com$/;
+const EMAIL_POLICY =/^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 const PASSWORD_POLICY = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
 
 export default function Signup({ onSignup, onGoToLogin }) {
@@ -30,7 +30,7 @@ export default function Signup({ onSignup, onGoToLogin }) {
       return;
     }
     if (!EMAIL_POLICY.test(email)) {
-      setError("Email must be letters + numbers followed by @gmail.com");
+      setError("Email must be letters followed by @gmail.com");
       return;
     }
     if (!PASSWORD_POLICY.test(password)) {

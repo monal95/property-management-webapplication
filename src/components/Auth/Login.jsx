@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Home, Mail, Lock } from "lucide-react";
 
-const EMAIL_REGEX = /^[A-Za-z0-9._%+-]+@([A-Za-z0-9-]+\.[A-Za-z]{2,}|gmail\.com|\d{4})$/;
+const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 
 export default function Login({ onLogin, onGoToSignup }) {
   const [identifier, setIdentifier] = useState("");
