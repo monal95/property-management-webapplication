@@ -15,8 +15,17 @@ const maintenanceRoutes = require('./routes/maintenance');
 const app = express();
 const PORT = process.env.PORT || 5000;
 
+const allowedOrigins = [
+  "http://localhost:5173",             // for local dev
+  "https://rentifyy-rho.vercel.app/",  // replace with your real Vercel domain
+];
+
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: allowedOrigins,
+  credentials: true,
+}));
+
 // Razorpay webhook must receive raw body to verify signature
 app.use('/api/razorpay/webhook', express.raw({ type: 'application/json' }));
 app.use(express.json({ limit: '10mb' }));
