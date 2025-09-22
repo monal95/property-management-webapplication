@@ -19,7 +19,7 @@ const TenantComplaints = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('http://localhost:5000/api/maintenance/tenant', {
+			const response = await fetch('/maintenance/tenant', {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
@@ -51,7 +51,7 @@ const TenantComplaints = () => {
 				return;
 			}
 
-			const response = await fetch('http://localhost:5000/api/maintenance', {
+			const response = await fetch('/maintenance', {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,

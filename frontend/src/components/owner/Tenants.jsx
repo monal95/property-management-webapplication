@@ -45,7 +45,7 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch('http://localhost:5000/api/tenants', {
+      const response = await fetch('/tenants', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ const Tenants = () => {
 
       if (!token) return;
 
-      const response = await fetch('http://localhost:5000/api/properties/owner/my-properties', {
+      const response = await fetch('/properties/owner/my-properties', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -101,7 +101,7 @@ const Tenants = () => {
       }
 
       // Use the new assign-by-email endpoint
-      const response = await fetch('http://localhost:5000/api/tenants/assign-by-email', {
+      const response = await fetch('/tenants/assign-by-email', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -138,7 +138,7 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/tenants/${selectedTenant._id}`, {
+      const response = await fetch(`/tenants/${selectedTenant._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -176,7 +176,7 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/tenants/${tenantId}`, {
+      const response = await fetch(`/tenants/${tenantId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

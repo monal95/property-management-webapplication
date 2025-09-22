@@ -30,7 +30,7 @@ const TenantPayments = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('http://localhost:5000/api/payments/tenant', {
+			const response = await fetch('/payments/tenant', {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
@@ -92,7 +92,7 @@ const TenantPayments = () => {
 			}
 
 			// Create Razorpay order
-			const response = await fetch('http://localhost:5000/api/payments/create-order', {
+			const response = await fetch('/payments/create-order', {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -163,7 +163,7 @@ const TenantPayments = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('http://localhost:5000/api/payments/verify-payment', {
+			const response = await fetch('/payments/verify-payment', {
 				method: 'POST',
 				headers: {
 					'Authorization': `Bearer ${token}`,

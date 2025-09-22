@@ -36,7 +36,7 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('http://localhost:5000/api/maintenance/owner', {
+			const response = await fetch('/maintenance/owner', {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
@@ -67,7 +67,7 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch(`http://localhost:5000/api/maintenance/${requestId}/status`, {
+			const response = await fetch(`/maintenance/${requestId}/status`, {
 				method: 'PATCH',
 				headers: {
 					'Authorization': `Bearer ${token}`,
@@ -100,7 +100,7 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch(`http://localhost:5000/api/maintenance/${requestId}`, {
+			const response = await fetch(`/maintenance/${requestId}`, {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'

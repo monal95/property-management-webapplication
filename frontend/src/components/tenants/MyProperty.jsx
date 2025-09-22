@@ -23,7 +23,7 @@ const TenantMyProperty = () => {
 
 			// First, let's debug the user
 			console.log('Fetching debug info...');
-			const debugResponse = await fetch('http://localhost:5000/api/tenants/debug-user', {
+			const debugResponse = await fetch('/tenants/debug-user', {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'
@@ -35,7 +35,7 @@ const TenantMyProperty = () => {
 				console.log('Debug data:', debugData);
 			}
 
-			const response = await fetch('http://localhost:5000/api/tenants/my-property', {
+			const response = await fetch('/tenants/my-property', {
 				headers: {
 					'Authorization': `Bearer ${token}`,
 					'Content-Type': 'application/json'

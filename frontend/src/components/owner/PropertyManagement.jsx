@@ -47,7 +47,7 @@ const PropertyManagement = () => {
       }
 
       console.log('Fetching properties...');
-      const response = await fetch('http://localhost:5000/api/properties/owner/my-properties', {
+      const response = await fetch('/properties/owner/my-properties', {
         headers: {
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -95,7 +95,7 @@ const PropertyManagement = () => {
 
       console.log('Sending property data to API:', propertyData);
 
-      const response = await fetch('http://localhost:5000/api/properties', {
+      const response = await fetch('/properties', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -133,7 +133,7 @@ const PropertyManagement = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/properties/${selectedProperty._id}`, {
+      const response = await fetch(`/properties/${selectedProperty._id}`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -171,7 +171,7 @@ const PropertyManagement = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/properties/${propertyId}`, {
+      const response = await fetch(`/properties/${propertyId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

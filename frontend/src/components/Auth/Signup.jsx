@@ -46,7 +46,7 @@ export default function Signup({ onSignup, onGoToLogin }) {
 
     setLoading(true);
     try {
-      const res = await fetch("http://localhost:5000/api/auth/register", {
+      const res = await fetch("/auth/register", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ firstName, lastName, email, phone, password, role })
@@ -82,7 +82,7 @@ export default function Signup({ onSignup, onGoToLogin }) {
     setError("");
 
     try {
-      const res = await fetch("http://localhost:5000/api/auth/verify-phone", {
+      const res = await fetch("/auth/verify-phone", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone, otp })
@@ -107,7 +107,7 @@ export default function Signup({ onSignup, onGoToLogin }) {
   const handleResendOTP = async () => {
     setError("");
     try {
-      const res = await fetch("http://localhost:5000/api/auth/resend-otp", {
+      const res = await fetch("/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone })

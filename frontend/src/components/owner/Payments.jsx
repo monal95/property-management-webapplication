@@ -49,7 +49,7 @@ const TenantPayments = () => {
       if (!token) return;
 
       const response = await fetch(
-        'http://localhost:5000/api/payments/payment-status',
+        '/payments/payment-status',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -73,7 +73,7 @@ const TenantPayments = () => {
       if (!token) return;
 
       const response = await fetch(
-        'http://localhost:5000/api/payments/tenant',
+        '/payments/tenant',
         {
           headers: {
             Authorization: `Bearer ${token}`,
@@ -212,7 +212,7 @@ const TenantPayments = () => {
       }
 
       const response = await fetch(
-        'http://localhost:5000/api/payments/create-order',
+        '/payments/create-order',
         {
           method: 'POST',
           headers: {
@@ -257,7 +257,7 @@ const TenantPayments = () => {
       }
 
       const response = await fetch(
-        'http://localhost:5000/api/payments/verify-payment',
+        '/payments/verify-payment',
         {
           method: 'POST',
           headers: {
