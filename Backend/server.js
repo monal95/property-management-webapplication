@@ -2,6 +2,9 @@ const express = require('express');
 const mongoose = require('mongoose');
 const cors = require('cors');
 const path = require('path');
+const helmet = require('helmet');
+const compression = require('compression');
+const rateLimit = require('express-rate-limit');
 require('dotenv').config();
 
 const authRoutes = require('./routes/auth');
@@ -17,8 +20,12 @@ const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
   "http://localhost:5173",             // for local dev
-  "https://rentifyy-rho.vercel.app/",  // replace with your real Vercel domain
-];
+  "https://rentify-rho.vercel.app",    // your Vercel domain
+  "https://rentifyy-rho.vercel.app",   // alternative domain
+  "https://lprt-web.vercel.app",       // new deployment domain
+  "https://lprt-property.vercel.app",  // alternative domain
+  process.env.FRONTEND_URL,             // dynamic frontend URL from env
+].filter(Boolean);
 
 // Middleware
 app.use(cors({
