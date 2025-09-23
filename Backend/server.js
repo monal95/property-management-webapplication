@@ -28,8 +28,6 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 // Middleware
-const cors = require("cors");
-
 app.use(cors({
   origin: "https://68d23b15f78ce9cbb4d9a017--rentifyyyy.netlify.app", // your frontend domain
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
