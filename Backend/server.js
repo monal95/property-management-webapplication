@@ -19,7 +19,7 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
-  "http://localhost:5173",             // for local dev
+  "http://localhost:5173",             // local frontend (Vite default)
   "https://rentify-rho.vercel.app",    // your Vercel domain
   "https://rentifyy-rho.vercel.app",   // alternative domain
   "https://lprt-web.vercel.app",       // new deployment domain
@@ -69,8 +69,9 @@ app.use('*', (req, res) => {
   res.status(404).json({ message: 'Route not found' });
 });
 
-// Connect to MongoDB
-mongoose.connect(process.env.MONGODB_URI || 'mongodb://localhost:27017/lprt_db')
+// Connect to MongoDB (prefers env, falls back to local)
+const mongoUri = process.env.MONGODB_URI || 'mongodb://127.0.0.1:27017/lprt_db';
+mongoose.connect(mongoUri)
   .then(() => {
     console.log('Connected to MongoDB');
     app.listen(PORT, () => {

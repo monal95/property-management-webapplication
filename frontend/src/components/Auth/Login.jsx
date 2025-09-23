@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, Home, Mail, Lock } from "lucide-react";
+import api from '../../api';
 
 const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 
@@ -11,6 +12,7 @@ export default function Login({ onLogin, onGoToSignup }) {
   const [error, setError] = useState("");
 
   const handleLogin = async () => {
+
     setError("");
     if (!identifier || !password) {
       setError("Please fill in all fields");
@@ -19,16 +21,9 @@ export default function Login({ onLogin, onGoToSignup }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/auth/login", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ identifier, password })
-      });
+      const res = await api.post("/auth/login", { identifier, password });
+      const data = res.data;
 
-      const data = await res.json();
-      if (!res.ok) {
-        throw new Error(data?.message || "Login failed");
-      }
       // Save minimal user data for greeting
       localStorage.setItem("loggedIn", "true");
       localStorage.setItem("userEmail", data?.user?.email || identifier);
@@ -42,10 +37,11 @@ export default function Login({ onLogin, onGoToSignup }) {
       onLogin();
     } catch (err) {
       // Handle phone verification requirement specifically
-      if (err.message.includes('Please verify your phone number')) {
+      const message = err?.response?.data?.message || err.message || 'Login failed';
+      if (message.includes('Please verify your phone number')) {
         setError("Please verify your phone number with OTP before logging in. Check your phone for the verification code.");
       } else {
-        setError(err.message);
+        setError(message);
       }
     } finally {
       setLoading(false);

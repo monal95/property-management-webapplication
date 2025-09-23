@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { CreditCard, Calendar, AlertTriangle, CheckCircle2, Clock, DollarSign, Building } from 'lucide-react';
+import api from '../../api';
 
 const StatusPill = ({ status }) => {
 	const map = {
@@ -30,22 +31,17 @@ const TenantPayments = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('/payments/tenant', {
+			const response = await api.get('/payments/tenant', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
-			if (response.ok) {
-				const data = await response.json();
-				setPayments(data.payments);
-				setSummary(data.summary);
-			} else {
-				console.error('Failed to fetch payments:', response.status);
-			}
+			const data = response.data;
+			setPayments(data.payments);
+			setSummary(data.summary);
 		} catch (error) {
-			console.error('Error fetching payments:', error);
+			console.error('Error fetching payments:', error?.response?.data || error);
 		} finally {
 			setLoading(false);
 		}
@@ -92,19 +88,16 @@ const TenantPayments = () => {
 			}
 
 			// Create Razorpay order
-			const response = await fetch('/payments/create-order', {
-				method: 'POST',
+			const response = await api.post('/payments/create-order', {
+				paymentIds: selectedPayments
+			}, {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
+					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({
-					paymentIds: selectedPayments
-				})
 			});
 
-			if (response.ok) {
-				const data = await response.json();
+			if (response.status === 200) {
+				const data = response.data;
 
 				// Check if Razorpay is available
 				if (typeof window.Razorpay === 'undefined') {
@@ -142,7 +135,7 @@ const TenantPayments = () => {
 					alert('Payment gateway error. Please try again or contact support.');
 				}
 			} else {
-				const errorData = await response.json();
+				const errorData = response.data;
 				if (response.status === 503) {
 					alert('Online payment is currently unavailable. Please contact your landlord for alternative payment methods.');
 				} else {
@@ -150,7 +143,7 @@ const TenantPayments = () => {
 				}
 			}
 		} catch (error) {
-			console.error('Error starting payment:', error);
+			console.error('Error starting payment:', error?.response?.data || error);
 			alert('Failed to start payment. Please try again.');
 		} finally {
 			setPaying(false);
@@ -163,29 +156,26 @@ const TenantPayments = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('/payments/verify-payment', {
-				method: 'POST',
+			const response = await api.post('/payments/verify-payment', {
+				razorpay_order_id: orderId,
+				razorpay_payment_id: paymentId,
+				razorpay_signature: signature
+			}, {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
+					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({
-					razorpay_order_id: orderId,
-					razorpay_payment_id: paymentId,
-					razorpay_signature: signature
-				})
 			});
 
-			if (response.ok) {
+			if (response.status === 200) {
 				alert('Payment successful! Your rent has been paid.');
 				setSelectedPayments([]);
 				await fetchPayments(); // Refresh the data
 			} else {
-				const errorData = await response.json();
+				const errorData = response.data;
 				alert(`Payment verification failed: ${errorData.message}`);
 			}
 		} catch (error) {
-			console.error('Error verifying payment:', error);
+			console.error('Error verifying payment:', error?.response?.data || error);
 			alert('Payment verification failed. Please contact support.');
 		}
 	};

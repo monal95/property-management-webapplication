@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Home, MapPin, Calendar, Users, Building, Star, Eye, ChevronLeft, ChevronRight } from 'lucide-react';
+import api from '../../api';
 
 const TenantMyProperty = () => {
 	const [property, setProperty] = useState(null);
@@ -23,23 +24,21 @@ const TenantMyProperty = () => {
 
 			// First, let's debug the user
 			console.log('Fetching debug info...');
-			const debugResponse = await fetch('/tenants/debug-user', {
+			const debugResponse = await api.get('/tenants/debug-user', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
-			if (debugResponse.ok) {
-				const debugData = await debugResponse.json();
+			if (debugResponse.status === 200) {
+				const debugData = debugResponse.data;
 				console.log('Debug data:', debugData);
 			}
 
-			const response = await fetch('/tenants/my-property', {
+			const response = await api.get('/tenants/my-property', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
 			if (response.status === 404) {
@@ -48,18 +47,14 @@ const TenantMyProperty = () => {
 				return;
 			}
 
-			if (!response.ok) {
-				const errorData = await response.json();
-				throw new Error(errorData.message || 'Failed to fetch property details');
-			}
-
-			const data = await response.json();
+			const data = response.data;
 			setProperty(data.property);
 			setTenantInfo(data.tenantInfo);
 			setLoading(false);
 		} catch (err) {
-			console.error('Error fetching property:', err);
-			setError(err.message);
+			const message = err?.response?.data?.message || err.message || 'Failed to fetch property details';
+			console.error('Error fetching property:', err?.response?.data || err);
+			setError(message);
 			setLoading(false);
 		}
 	};

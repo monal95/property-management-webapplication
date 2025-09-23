@@ -14,6 +14,7 @@ import {
   Star
 }
   from 'lucide-react';
+import api from '../../api';
 import AddPropertyModal from './AddPropertyModal';
 import EditPropertyModal from './EditPropertyModal';
 import PropertyDetailsModal from './PropertyDetailsModal';
@@ -47,28 +48,22 @@ const PropertyManagement = () => {
       }
 
       console.log('Fetching properties...');
-      const response = await fetch('/properties/owner/my-properties', {
+      const response = await api.get('/properties/owner/my-properties', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
       console.log('Properties response status:', response.status);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('Properties fetch error:', errorData);
-        throw new Error(errorData.message || 'Failed to fetch properties');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       console.log('Properties data:', data);
       setProperties(data.properties || []);
       setError('');
     } catch (err) {
-      console.error('Error fetching properties:', err);
-      setError('Failed to load properties: ' + err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to load properties';
+      console.error('Error fetching properties:', err?.response?.data || err);
+      setError('Failed to load properties: ' + message);
       setProperties([]);
     } finally {
       setLoading(false);
@@ -94,33 +89,23 @@ const PropertyManagement = () => {
       }
 
       console.log('Sending property data to API:', propertyData);
-
-      const response = await fetch('/properties', {
-        method: 'POST',
+      const response = await api.post('/properties', propertyData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(propertyData)
       });
 
       console.log('API Response status:', response.status);
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        console.error('API Error response:', errorData);
-        console.error('Full error details:', JSON.stringify(errorData, null, 2));
-        throw new Error(errorData.message || 'Failed to create property');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       console.log('API Success response:', data);
       setProperties([data.property, ...properties]);
       setShowAddModal(false);
       setError('');
     } catch (err) {
-      console.error('Error adding property:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to create property';
+      console.error('Error adding property:', err?.response?.data || err);
+      setError(message);
     }
   };
 
@@ -133,28 +118,21 @@ const PropertyManagement = () => {
         return;
       }
 
-      const response = await fetch(`/properties/${selectedProperty._id}`, {
-        method: 'PUT',
+      const response = await api.put(`/properties/${selectedProperty._id}`, propertyData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(propertyData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update property');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setProperties(properties.map(p => p._id === selectedProperty._id ? data.property : p));
       setShowEditModal(false);
       setSelectedProperty(null);
       setError('');
     } catch (err) {
-      console.error('Error updating property:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to update property';
+      console.error('Error updating property:', err?.response?.data || err);
+      setError(message);
     }
   };
 
@@ -171,24 +149,18 @@ const PropertyManagement = () => {
         return;
       }
 
-      const response = await fetch(`/properties/${propertyId}`, {
-        method: 'DELETE',
+      await api.delete(`/properties/${propertyId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete property');
-      }
 
       setProperties(properties.filter(p => p._id !== propertyId));
       setError('');
     } catch (err) {
-      console.error('Error deleting property:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to delete property';
+      console.error('Error deleting property:', err?.response?.data || err);
+      setError(message);
     }
   };
 

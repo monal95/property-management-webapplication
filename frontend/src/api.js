@@ -1,7 +1,13 @@
 import axios from "axios";
 
-// API base URL with fallback
+// API base URL with fallback for local development
 const baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
+
+// Debug: log resolved API base URL at runtime
+if (typeof window !== 'undefined') {
+  console.log('[Rentify] API base URL:', baseURL);
+  console.log('[Rentify] Environment:', import.meta.env.MODE);
+}
 
 const api = axios.create({
   baseURL,

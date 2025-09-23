@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Eye, EyeOff, UserPlus, User, Mail, Lock, Home, Phone } from "lucide-react";
+import api from '../../api';
 
 const EMAIL_POLICY =/^[a-zA-Z0-9._%+-]+@gmail\.com$/;
 const PASSWORD_POLICY = /^(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z0-9]).{6,}$/;
@@ -46,28 +47,15 @@ export default function Signup({ onSignup, onGoToLogin }) {
 
     setLoading(true);
     try {
-      const res = await fetch("/auth/register", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ firstName, lastName, email, phone, password, role })
-      });
-
-      // Network-level failure (CORS/offline/backend down)
-      if (!res) {
-        throw new Error("Network error. Check backend is running on :5000");
-      }
-
-      const data = await res.json().catch(() => ({}));
-      if (!res.ok) {
-        throw new Error(data?.message || "Signup failed");
-      }
-
+      const res = await api.post("/auth/register", { firstName, lastName, email, phone, password, role });
+      const data = res.data || {};
       setSuccess("Account created! Please verify your phone number with OTP.");
-      setUserId(data.user.id);
+      setUserId(data.user?.id);
       setShowOTPVerification(true);
       setLoading(false);
     } catch (err) {
-      setError(err.message === "Failed to fetch" ? "Unable to reach server. Start backend or check CORS." : err.message);
+      const message = err?.response?.data?.message || err.message || 'Signup failed';
+      setError(message);
       setLoading(false);
     }
   };
@@ -82,14 +70,9 @@ export default function Signup({ onSignup, onGoToLogin }) {
     setError("");
 
     try {
-      const res = await fetch("/auth/verify-phone", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone, otp })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
+      const res = await api.post("/auth/verify-phone", { phone, otp });
+      const data = res.data;
+      if (res.status !== 200) {
         throw new Error(data.message || "OTP verification failed");
       }
 
@@ -98,7 +81,8 @@ export default function Signup({ onSignup, onGoToLogin }) {
         onGoToLogin();
       }, 2000);
     } catch (err) {
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'OTP verification failed';
+      setError(message);
     } finally {
       setVerifyingOTP(false);
     }
@@ -107,21 +91,17 @@ export default function Signup({ onSignup, onGoToLogin }) {
   const handleResendOTP = async () => {
     setError("");
     try {
-      const res = await fetch("/auth/resend-otp", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ phone })
-      });
-
-      const data = await res.json();
-      if (!res.ok) {
+      const res = await api.post("/auth/resend-otp", { phone });
+      const data = res.data;
+      if (res.status !== 200) {
         throw new Error(data.message || "Failed to resend OTP");
       }
 
       setSuccess("New OTP sent! Check your phone.");
       setOtp("");
     } catch (err) {
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to resend OTP';
+      setError(message);
     }
   };
 

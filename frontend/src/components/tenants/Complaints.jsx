@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Send, Plus, AlertTriangle, Clock, CheckCircle2, Wrench } from 'lucide-react';
+import api from '../../api';
 
 const TenantComplaints = () => {
 	const [title, setTitle] = useState('');
@@ -19,21 +20,16 @@ const TenantComplaints = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('/maintenance/tenant', {
+			const response = await api.get('/maintenance/tenant', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
-			if (response.ok) {
-				const data = await response.json();
-				setItems(data);
-			} else {
-				console.error('Failed to fetch complaints:', response.status);
-			}
+			const data = response.data;
+			setItems(data);
 		} catch (error) {
-			console.error('Error fetching complaints:', error);
+			console.error('Error fetching complaints:', error?.response?.data || error);
 		} finally {
 			setFetching(false);
 		}
@@ -51,22 +47,19 @@ const TenantComplaints = () => {
 				return;
 			}
 
-			const response = await fetch('/maintenance', {
-				method: 'POST',
+			const response = await api.post('/maintenance', {
+				title,
+				description,
+				priority,
+				category
+			}, {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
+					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({
-					title,
-					description,
-					priority,
-					category
-				})
 			});
 
-			if (response.ok) {
-				const data = await response.json();
+			if (response.status === 201 || response.status === 200) {
+				const data = response.data;
 				setItems([data.maintenanceRequest, ...items]);
 				setTitle('');
 				setDescription('');
@@ -74,11 +67,11 @@ const TenantComplaints = () => {
 				setCategory('other');
 				alert('Complaint submitted successfully!');
 			} else {
-				const errorData = await response.json();
+				const errorData = response.data;
 				alert(`Failed to submit complaint: ${errorData.message}`);
 			}
 		} catch (error) {
-			console.error('Error submitting complaint:', error);
+			console.error('Error submitting complaint:', error?.response?.data || error);
 			alert('Failed to submit complaint. Please try again.');
 		} finally {
 			setLoading(false);

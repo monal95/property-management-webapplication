@@ -8,6 +8,7 @@ import {
   DollarSign,
   Building
 } from 'lucide-react';
+import api from '../../api';
 
 const StatusPill = ({ status }) => {
   const map = {
@@ -48,18 +49,17 @@ const TenantPayments = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(
+      const response = await api.get(
         '/payments/payment-status',
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           }
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         setPaymentStatus(data);
       }
     } catch (error) {
@@ -72,18 +72,17 @@ const TenantPayments = () => {
       const token = localStorage.getItem('token');
       if (!token) return;
 
-      const response = await fetch(
+      const response = await api.get(
         '/payments/tenant',
         {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           }
         }
       );
 
-      if (response.ok) {
-        const data = await response.json();
+      if (response.status === 200) {
+        const data = response.data;
         if (data.success) {
           setPayments(data.payments);
           setSummary(data.summary);
@@ -211,21 +210,19 @@ const TenantPayments = () => {
         return;
       }
 
-      const response = await fetch(
+      const response = await api.post(
         '/payments/create-order',
+        { paymentIds: selectedPayments },
         {
-          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({ paymentIds: selectedPayments })
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (!response.ok) {
+      if (response.status !== 200) {
         alert(`Payment Error: ${data.message || 'Unknown error'}`);
         setPaying(false);
         setShowPaymentModal(false);
@@ -256,25 +253,23 @@ const TenantPayments = () => {
         return;
       }
 
-      const response = await fetch(
+      const response = await api.post(
         '/payments/verify-payment',
         {
-          method: 'POST',
+          razorpay_order_id: orderId,
+          razorpay_payment_id: paymentId,
+          razorpay_signature: signature
+        },
+        {
           headers: {
             Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/json'
           },
-          body: JSON.stringify({
-            razorpay_order_id: orderId,
-            razorpay_payment_id: paymentId,
-            razorpay_signature: signature
-          })
         }
       );
 
-      const data = await response.json();
+      const data = response.data;
 
-      if (response.ok && data.success) {
+      if (response.status === 200 && data.success) {
         alert('🎉 Payment successful!');
         setSelectedPayments([]);
         setShowPaymentModal(false);

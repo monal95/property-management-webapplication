@@ -14,6 +14,7 @@ import {
   Briefcase,
   Calendar
 } from 'lucide-react';
+import api from '../../api';
 import AddTenantModal from './AddTenantModal';
 import EditTenantModal from './EditTenantModal';
 import TenantDetailsModal from './TenantDetailsModal';
@@ -45,24 +46,19 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch('/tenants', {
+      const response = await api.get('/tenants', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to fetch tenants');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setTenants(data.tenants || []);
       setError('');
     } catch (err) {
-      console.error('Error fetching tenants:', err);
-      setError('Failed to load tenants: ' + err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to fetch tenants';
+      console.error('Error fetching tenants:', err?.response?.data || err);
+      setError('Failed to load tenants: ' + message);
       setTenants([]);
     } finally {
       setLoading(false);
@@ -75,17 +71,14 @@ const Tenants = () => {
 
       if (!token) return;
 
-      const response = await fetch('/properties/owner/my-properties', {
+      const response = await api.get('/properties/owner/my-properties', {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
 
-      if (response.ok) {
-        const data = await response.json();
-        setProperties(data.properties || []);
-      }
+      const data = response.data;
+      setProperties(data.properties || []);
     } catch (err) {
       console.error('Error fetching properties:', err);
     }
@@ -101,31 +94,24 @@ const Tenants = () => {
       }
 
       // Use the new assign-by-email endpoint
-      const response = await fetch('/tenants/assign-by-email', {
-        method: 'POST',
+      const response = await api.post('/tenants/assign-by-email', {
+        ...tenantData,
+        propertyId: tenantData.assignedProperty,
+        tenantEmail: tenantData.email,
+      }, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify({
-          ...tenantData,
-          propertyId: tenantData.assignedProperty,
-          tenantEmail: tenantData.email
-        })
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to assign tenant to property');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setTenants([data.tenant, ...tenants]);
       setShowAddModal(false);
       setError('');
     } catch (err) {
-      console.error('Error adding tenant:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to assign tenant to property';
+      console.error('Error adding tenant:', err?.response?.data || err);
+      setError(message);
     }
   };
 
@@ -138,28 +124,21 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch(`/tenants/${selectedTenant._id}`, {
-        method: 'PUT',
+      const response = await api.put(`/tenants/${selectedTenant._id}`, tenantData, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
+          Authorization: `Bearer ${token}`,
         },
-        body: JSON.stringify(tenantData)
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to update tenant');
-      }
-
-      const data = await response.json();
+      const data = response.data;
       setTenants(tenants.map(t => t._id === selectedTenant._id ? data.tenant : t));
       setShowEditModal(false);
       setSelectedTenant(null);
       setError('');
     } catch (err) {
-      console.error('Error updating tenant:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to update tenant';
+      console.error('Error updating tenant:', err?.response?.data || err);
+      setError(message);
     }
   };
 
@@ -176,24 +155,18 @@ const Tenants = () => {
         return;
       }
 
-      const response = await fetch(`/tenants/${tenantId}`, {
-        method: 'DELETE',
+      await api.delete(`/tenants/${tenantId}`, {
         headers: {
-          'Authorization': `Bearer ${token}`,
-          'Content-Type': 'application/json'
-        }
+          Authorization: `Bearer ${token}`,
+        },
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to delete tenant');
-      }
 
       setTenants(tenants.filter(t => t._id !== tenantId));
       setError('');
     } catch (err) {
-      console.error('Error deleting tenant:', err);
-      setError(err.message);
+      const message = err?.response?.data?.message || err.message || 'Failed to delete tenant';
+      console.error('Error deleting tenant:', err?.response?.data || err);
+      setError(message);
     }
   };
 

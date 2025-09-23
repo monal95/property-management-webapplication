@@ -1,5 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { AlertTriangle, CheckCircle2, Wrench, Clock, MessageSquare, Search, Plus, Eye } from 'lucide-react';
+import api from '../../api';
 
 const PriorityPill = ({ value }) => {
 	const styles = value === 'high' ? 'bg-red-100 text-red-700' : value === 'medium' ? 'bg-yellow-100 text-yellow-700' : 'bg-green-100 text-green-700';
@@ -36,21 +37,20 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch('/maintenance/owner', {
+			const response = await api.get('/maintenance/owner', {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
-			if (response.ok) {
-				const data = await response.json();
+			if (response.status === 200) {
+				const data = response.data;
 				setMaintenanceRequests(data);
 			} else {
 				console.error('Failed to fetch maintenance requests:', response.status);
 			}
 		} catch (error) {
-			console.error('Error fetching maintenance requests:', error);
+			console.error('Error fetching maintenance requests:', error?.response?.data || error);
 		} finally {
 			setLoading(false);
 		}
@@ -67,28 +67,25 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch(`/maintenance/${requestId}/status`, {
-				method: 'PATCH',
+			const response = await api.patch(`/maintenance/${requestId}/status`, {
+				status: newStatus,
+				notes: statusNote
+			}, {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
+					Authorization: `Bearer ${token}`,
 				},
-				body: JSON.stringify({
-					status: newStatus,
-					notes: statusNote
-				})
 			});
 
-			if (response.ok) {
+			if (response.status === 200) {
 				await fetchMaintenanceRequests(); // Refresh the list
 				setStatusNote('');
 				alert('Status updated successfully!');
 			} else {
-				const errorData = await response.json();
+				const errorData = response.data;
 				alert(`Failed to update status: ${errorData.message}`);
 			}
 		} catch (error) {
-			console.error('Error updating status:', error);
+			console.error('Error updating status:', error?.response?.data || error);
 			alert('Failed to update status. Please try again.');
 		} finally {
 			setUpdatingStatus(false);
@@ -100,20 +97,19 @@ const OwnerMaintenance = () => {
 			const token = localStorage.getItem('token');
 			if (!token) return;
 
-			const response = await fetch(`/maintenance/${requestId}`, {
+			const response = await api.get(`/maintenance/${requestId}`, {
 				headers: {
-					'Authorization': `Bearer ${token}`,
-					'Content-Type': 'application/json'
-				}
+					Authorization: `Bearer ${token}`,
+				},
 			});
 
-			if (response.ok) {
-				const data = await response.json();
+			if (response.status === 200) {
+				const data = response.data;
 				setSelectedRequest(data);
 				setShowDetailsModal(true);
 			}
 		} catch (error) {
-			console.error('Error fetching maintenance request details:', error);
+			console.error('Error fetching maintenance request details:', error?.response?.data || error);
 		}
 	};
 
