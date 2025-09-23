@@ -28,9 +28,12 @@ const allowedOrigins = [
 ].filter(Boolean);
 
 // Middleware
+const cors = require("cors");
+
 app.use(cors({
-  origin: allowedOrigins,
-  credentials: true,
+  origin: "https://68d23b15f78ce9cbb4d9a017--rentifyyyy.netlify.app", // your frontend domain
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"]
 }));
 
 // Razorpay webhook must receive raw body to verify signature
