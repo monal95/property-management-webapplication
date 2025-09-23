@@ -19,20 +19,25 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
-  "http://localhost:5173",             // local frontend (Vite default)
-  "https://rentify-rho.vercel.app",    // your Vercel domain
-  "https://rentifyy-rho.vercel.app",   // alternative domain
-  "https://lprt-web.vercel.app",       // new deployment domain
-  "https://lprt-property.vercel.app",  // alternative domain
-  process.env.FRONTEND_URL,             // dynamic frontend URL from env
-].filter(Boolean);
+  "https://rentifyyyy.netlify.app",
+  /\.netlify\.app$/  // allow any netlify subdomain
+];
 
-// Middleware
 app.use(cors({
-  origin: "https://68d23b15f78ce9cbb4d9a017--rentifyyyy.netlify.app", // your frontend domain
+  origin: (origin, callback) => {
+    if (!origin || allowedOrigins.some(o => 
+        (typeof o === "string" && o === origin) || 
+        (o instanceof RegExp && o.test(origin))
+    )) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 
 // Razorpay webhook must receive raw body to verify signature
 app.use('/api/razorpay/webhook', express.raw({ type: 'application/json' }));
