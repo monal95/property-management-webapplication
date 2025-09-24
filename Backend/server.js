@@ -19,24 +19,27 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
-  "https://rentifyyyy.netlify.app",
-  /\.netlify\.app$/  // allow any netlify subdomain
+  "https://rentifyyyy.netlify.app",   // production domain
+  /\.netlify\.app$/                   // preview builds
 ];
 
 app.use(cors({
   origin: (origin, callback) => {
-    if (!origin || allowedOrigins.some(o => 
-        (typeof o === "string" && o === origin) || 
-        (o instanceof RegExp && o.test(origin))
+    if (!origin) return callback(null, true); // allow Postman/cURL
+    if (allowedOrigins.some(o =>
+      (typeof o === "string" && o === origin) ||
+      (o instanceof RegExp && o.test(origin))
     )) {
       callback(null, true);
     } else {
-      callback(new Error("Not allowed by CORS"));
+      callback(new Error("CORS not allowed"));
     }
   },
+  credentials: true,  // 🔥 allow cookies/credentials
   methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"]
 }));
+
 
 
 // Razorpay webhook must receive raw body to verify signature
