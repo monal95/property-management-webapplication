@@ -23,7 +23,7 @@ try {
     console.log('💡 To enable real SMS: npm install twilio and set environment variables');
 }
 
-const sendSMS = async (to, message) => {
+const sendSMS = async (to, message,otp) => {
     try {
         if (twilioClient) {
             // Send real SMS via Twilio

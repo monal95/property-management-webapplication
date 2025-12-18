@@ -61,13 +61,35 @@ export default function Signup({ onSignup, onGoToLogin }) {
   };
 
   const handleVerifyOTP = async () => {
-    if (!otp || otp.length !== 6) {
-      setError("Please enter a valid 6-digit OTP");
-      return;
+    setError("");
+    setVerifyingOTP(true);
+
+    // In development only: fetch server OTP so developers can inspect it
+    if (import.meta.env.DEV) {
+      try {
+        console.log("Fetching OTP for phone:", phone);
+        const otp_res = await api.get("/auth/get-otp", { params: { phone } });
+        const data_otp = otp_res.data || {};
+        const serverOtp = data_otp.otp;
+        console.log("OTP Response:", data_otp);
+        if (serverOtp) {
+          console.log("Dev OTP for phone", phone, "is:", serverOtp);
+        } else {
+          console.log("No OTP found in response");
+        }
+      } catch (err) {
+        console.error("Error fetching dev OTP:", err.message);
+        console.error("Full error:", err);
+        window.alert("Error fetching OTP: " + (err.message || "Unknown error"));
+      }
     }
 
-    setVerifyingOTP(true);
-    setError("");
+    // Validate the OTP entered by the user (state `otp`)
+    if (!otp || otp.length !== 6) {
+      setError("Please enter a valid 6-digit OTP");
+      setVerifyingOTP(false);
+      return;
+    }
 
     try {
       const res = await api.post("/auth/verify-phone", { phone, otp });
@@ -87,7 +109,6 @@ export default function Signup({ onSignup, onGoToLogin }) {
       setVerifyingOTP(false);
     }
   };
-
   const handleResendOTP = async () => {
     setError("");
     try {
@@ -126,7 +147,7 @@ export default function Signup({ onSignup, onGoToLogin }) {
           <div className="space-y-6">
             <div>
               <p className="text-sm text-gray-600 mb-4">
-                We've sent a 6-digit OTP to <span className="font-semibold">{phone}</span>
+                We've sent a 6-digit OTP to or try <b>123456</b> for Dev <span className="font-semibold">{phone}</span>
               </p>
               <div className="relative">
                 <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">

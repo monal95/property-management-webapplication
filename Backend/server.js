@@ -19,6 +19,9 @@ const app = express();
 const PORT = process.env.PORT || 5000;
 
 const allowedOrigins = [
+  "http://localhost:5173", // local dev
+  "http://localhost:3000", // local dev
+  "https://lprt-frontend.vercel.app", // vercel domain
   "https://rentifyyyy.netlify.app",   // production domain
   /\.netlify\.app$/                   // preview builds
 ];
